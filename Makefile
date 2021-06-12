@@ -24,7 +24,7 @@
 .PHONY: all clean
 
 # Define required raylib variables
-PROJECT_NAME       ?= drturtle
+PROJECT_NAME       ?= EagleDid1109
 RAYLIB_VERSION     ?= 3.5.0
 RAYLIB_PATH        ?= C:\GitHub\raylib
 

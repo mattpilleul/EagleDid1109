@@ -83,7 +83,6 @@ float hidistance = 0.0f;
 int foodBar = 0;
 int framesCounter = 0;
 
-unsigned char blue = 200;
 float timeCounter = 0;
     
 //----------------------------------------------------------------------------------
@@ -100,7 +99,7 @@ int main()
     //--------------------------------------------------------------------------------------
     
     // Init window
-    InitWindow(screenWidth, screenHeight, "Dr. Turtle & Mr. GAMERA");
+    InitWindow(screenWidth, screenHeight, "Eagle Did 11/09");
     
     // Initialize audio device
     InitAudioDevice();      
@@ -109,13 +108,13 @@ int main()
     sky = LoadTexture("resources/sky.png");
     mountains = LoadTexture("resources/mountains.png");
     sea = LoadTexture("resources/sea.png");
-    title = LoadTexture("resources/title.png");
-    turtle = LoadTexture("resources/turtle.png");
-    gamera = LoadTexture("resources/gamera.png");
-    shark = LoadTexture("resources/shark.png");
-    orca = LoadTexture("resources/orca.png");
-    swhale = LoadTexture("resources/swhale.png");
-    fish = LoadTexture("resources/fish.png");
+    title = LoadTexture("resources/new_sprites/title.png");
+    turtle = LoadTexture("resources/new_sprites/eagle.png");
+    gamera = LoadTexture("resources/new_sprites/henric.png");
+    shark = LoadTexture("resources/new_sprites/rafale.png");
+    orca = LoadTexture("resources/new_sprites/drone.png");
+    swhale = LoadTexture("resources/new_sprites/boeing777.png");
+    fish = LoadTexture("resources/new_sprites/worm.png");
     gframe = LoadTexture("resources/gframe.png");
     
     // Load game resources: fonts
@@ -212,9 +211,7 @@ void UpdateDrawFrame(void)
     UpdateMusicStream(music);   // Refill music stream buffers (if required)
         
     framesCounter++;
-    
-    // Sea color tint effect
-    blue = 210 + 25 * sinf(timeCounter);
+
     timeCounter += 0.01;
 
     // Game screens management
@@ -443,13 +440,13 @@ void UpdateDrawFrame(void)
         
         if (!gameraMode)
         {
-            DrawTexture(sea, seaScrolling, 0, (Color){ 16, 189, blue, 255});
-            DrawTexture(sea, screenWidth + seaScrolling, 0, (Color){ 16, 189, blue, 255});
+            DrawTexture(sea, seaScrolling, 0, BEIGE);
+            DrawTexture(sea, screenWidth + seaScrolling, 0, BEIGE);
         }
         else
         {
-            DrawTexture(sea, seaScrolling, 0, (Color){ 255, 113, 66, 255});
-            DrawTexture(sea, screenWidth + seaScrolling, 0, (Color){ 255, 113, 66, 255});
+            DrawTexture(sea, seaScrolling, 0, BEIGE);
+            DrawTexture(sea, screenWidth + seaScrolling, 0, BEIGE);
         }
         
         switch (currentScreen)
