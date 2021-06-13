@@ -28,7 +28,7 @@
 
 #define MAX_ENEMIES 10
 
-typedef enum { TITLE = 0, GAMEPLAY, ENDING } GameScreen;
+typedef enum { TITLE = 0, GAMEPLAY, ENDING, WIN } GameScreen;
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
@@ -47,12 +47,14 @@ Texture2D orca;
 Texture2D swhale;
 Texture2D fish;
 Texture2D gframe;
+Texture2D ttower;
 
 Font font;
 
 Sound eat;
 Sound die;
 Sound growl;
+Sound explode;
 
 Music music;
 
@@ -74,7 +76,12 @@ int enemyRail[MAX_ENEMIES];
 int enemyType[MAX_ENEMIES];
 bool enemyActive[MAX_ENEMIES];
 float enemySpeed = 10;
-    
+
+// Define Twin towers variables
+Rectangle ttowerBounds;
+bool ttowerActive;
+float ttowerSpeed = 10;
+
 // Define additional game variables
 int score = 0;
 float distance = 0.0f;
@@ -99,7 +106,7 @@ int main()
     //--------------------------------------------------------------------------------------
     
     // Init window
-    InitWindow(screenWidth, screenHeight, "Eagle Did 11/09");
+    InitWindow(screenWidth, screenHeight, "Eagle Did 9/11");
     
     // Initialize audio device
     InitAudioDevice();      
@@ -116,15 +123,20 @@ int main()
     swhale = LoadTexture("resources/new_sprites/boeing777.png");
     fish = LoadTexture("resources/new_sprites/worm.png");
     gframe = LoadTexture("resources/gframe.png");
+    ttower = LoadTexture("resources/new_sprites/tours.png");
     
     // Load game resources: fonts
     font = LoadFont("resources/komika.png");
     
     // Load game resources: sounds
-    eat = LoadSound("resources/eat.wav");
-    die = LoadSound("resources/die.wav");
-    growl = LoadSound("resources/gamera.wav");
+    eat = LoadSound("resources/new_sprites/son_bouche_manger.wav");
+    die = LoadSound("resources/new_sprites/AIE.wav");
+    growl = LoadSound("resources/new_sprites/whatttt.wav");
+    explode = LoadSound("resources/new_sprites/bruit_explosion.wav");
     
+    SetSoundVolume(eat, 10);
+    SetSoundVolume(explode, 5);
+    SetSoundVolume(growl, 10);
     // Load music stream and start playing music
     music = LoadMusicStream("resources/speeding.ogg");
     PlayMusicStream(music);
@@ -154,6 +166,9 @@ int main()
         enemyBounds[i] = (Rectangle){ screenWidth + 14, 120*enemyRail[i] + 90 + 14, 100, 100 };
         enemyActive[i] = false;
     }
+
+    ttowerBounds = (Rectangle){ screenWidth + 14, 120 + 90, 100, screenHeight };
+    ttowerActive = false;
     
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
@@ -255,7 +270,7 @@ void UpdateDrawFrame(void)
             // Enemies activation logic (every 40 frames)        
             if (framesCounter > 40)
             {
-                for (int i = 0; i < MAX_ENEMIES; i++)
+                for (int i = 0; i < MAX_ENEMIES && distance < 1105; i++)
                 {
                     if (enemyActive[i] == false)
                     {
@@ -264,6 +279,9 @@ void UpdateDrawFrame(void)
                     }
                 }
                 
+                if (distance == 1109.0f)
+                    ttowerActive = true;
+
                 framesCounter = 0;
             }
             
@@ -289,6 +307,9 @@ void UpdateDrawFrame(void)
                 }
             }
             
+            if (ttowerActive)
+                ttowerBounds.x -= ttowerSpeed;
+
             if (!gameraMode) enemySpeed += 0.005;
             
             // Check collision player vs enemies
@@ -297,7 +318,7 @@ void UpdateDrawFrame(void)
                 if (enemyActive[i])
                 {
                     if (CheckCollisionRecs(playerBounds, enemyBounds[i]))
-                    {                       
+                    {
                         if (enemyType[i] < 3)   // Bad enemies
                         {
                             if (gameraMode)
@@ -326,7 +347,7 @@ void UpdateDrawFrame(void)
                                 // Player die logic
                                 PlaySound(die);
                             
-                                currentScreen = ENDING;
+                                currentScreen = WIN;
                                 framesCounter = 0;
                                 
                                 // Save hiscore and hidistance for next game
@@ -362,6 +383,18 @@ void UpdateDrawFrame(void)
                     }
                 }
             }
+
+            if (ttowerActive) {
+                if (CheckCollisionRecs(playerBounds, ttowerBounds)) {
+                    PlaySound(explode);
+                    currentScreen = WIN;
+                    framesCounter = 0;
+
+                    // Save hiscore and hidistance for next game
+                    if (score > hiscore) hiscore = score;
+                    if (distance > hidistance) hidistance = distance;
+                }
+            }
             
             // Gamera mode logic
             if (gameraMode)
@@ -377,10 +410,56 @@ void UpdateDrawFrame(void)
             }
     
             // Update distance counter
-            distance += 0.5f;
+            if (distance < 1109)
+                distance += 0.5f;
         
         } break;
         case ENDING:
+        {
+            // Press enter to play again
+            if (IsKeyPressed(KEY_ENTER))
+            {
+                currentScreen = GAMEPLAY;
+                
+                // Reset player
+                playerRail = 1;
+                playerBounds = (Rectangle){ 30 + 14, playerRail*120 + 90 + 14, 100, 100 };
+                gameraMode = false;
+                
+                // Reset enemies data
+                for (int i = 0; i < MAX_ENEMIES; i++)
+                {
+                    int enemyProb = GetRandomValue(0, 100);
+                    
+                    if (enemyProb < 30) enemyType[i] = 0;
+                    else if (enemyProb < 60) enemyType[i] = 1;
+                    else if (enemyProb < 90) enemyType[i] = 2;
+                    else enemyType[i] = 3;
+                    
+                    //enemyType[i] = GetRandomValue(0, 3);
+                    enemyRail[i] = GetRandomValue(0, 4);
+
+                    // Make sure not two consecutive enemies in the same row
+                    if (i > 0) while (enemyRail[i] == enemyRail[i - 1]) enemyRail[i] = GetRandomValue(0, 4);
+                    
+                    enemyBounds[i] = (Rectangle){ screenWidth + 14, 120*enemyRail[i] + 90 + 14, 100, 100 };
+                    enemyActive[i] = false;
+                }
+                
+                ttowerActive = false;
+                ttowerBounds = (Rectangle){ screenWidth + 14, 120 + 90 + 14, 100, 100 };
+
+                enemySpeed = 10;
+                
+                // Reset game variables
+                score = 0;
+                distance = 0.0;
+                foodBar = 0;
+                framesCounter = 0;
+            }
+  
+        } break;
+        case WIN:
         {
             // Press enter to play again
             if (IsKeyPressed(KEY_ENTER))
@@ -474,33 +553,37 @@ void UpdateDrawFrame(void)
                 //else DrawRectangleRec(playerBounds, Fade(ORANGE, 0.4f));
                 
                 // Draw enemies
-                for (int i = 0; i < MAX_ENEMIES; i++)
-                {
-                    if (enemyActive[i]) 
+                if (distance < 1109.0f) {
+                    for (int i = 0; i < MAX_ENEMIES; i++)
                     {
-                        // Draw enemies
-                        switch(enemyType[i])
+                        if (enemyActive[i]) 
                         {
-                            case 0: DrawTexture(shark, enemyBounds[i].x - 14, enemyBounds[i].y - 14, WHITE); break;
-                            case 1: DrawTexture(orca, enemyBounds[i].x - 14, enemyBounds[i].y - 14, WHITE); break;
-                            case 2: DrawTexture(swhale, enemyBounds[i].x - 14, enemyBounds[i].y - 14, WHITE); break;
-                            case 3: DrawTexture(fish, enemyBounds[i].x - 14, enemyBounds[i].y - 14, WHITE); break;
-                            default: break;
+                            // Draw enemies
+                            switch(enemyType[i])
+                            {
+                                case 0: DrawTexture(shark, enemyBounds[i].x - 14, enemyBounds[i].y - 14, WHITE); break;
+                                case 1: DrawTexture(orca, enemyBounds[i].x - 14, enemyBounds[i].y - 14, WHITE); break;
+                                case 2: DrawTexture(swhale, enemyBounds[i].x - 14, enemyBounds[i].y - 14, WHITE); break;
+                                case 3: DrawTexture(fish, enemyBounds[i].x - 14, enemyBounds[i].y - 14, WHITE); break;
+                                default: break;
+                            }
+
+                            // Draw enemies bounding boxes
+                            /*
+                            switch(enemyType[i])
+                            {
+                                case 0: DrawRectangleRec(enemyBounds[i], Fade(RED, 0.5f)); break;
+                                case 1: DrawRectangleRec(enemyBounds[i], Fade(RED, 0.5f)); break;
+                                case 2: DrawRectangleRec(enemyBounds[i], Fade(RED, 0.5f)); break;
+                                case 3: DrawRectangleRec(enemyBounds[i], Fade(GREEN, 0.5f)); break;
+                                default: break;
+                            }
+                            */
                         }
-                        
-                        // Draw enemies bounding boxes
-                        /*
-                        switch(enemyType[i])
-                        {
-                            case 0: DrawRectangleRec(enemyBounds[i], Fade(RED, 0.5f)); break;
-                            case 1: DrawRectangleRec(enemyBounds[i], Fade(RED, 0.5f)); break;
-                            case 2: DrawRectangleRec(enemyBounds[i], Fade(RED, 0.5f)); break;
-                            case 3: DrawRectangleRec(enemyBounds[i], Fade(GREEN, 0.5f)); break;
-                            default: break;
-                        }
-                        */
                     }
                 }
+                else
+                    DrawTexture(ttower, ttowerBounds.x - 14, ttowerBounds.y - 14, WHITE);
                 
                 // Draw gameplay interface
                 DrawRectangle(20, 20, 400, 40, Fade(GRAY, 0.4f));
@@ -512,7 +595,7 @@ void UpdateDrawFrame(void)
                 
                 if (gameraMode)
                 {
-                    DrawText("GAMERA MODE", 60, 22, 40, GRAY);
+                    DrawText("HENRIC MODE", 60, 22, 40, GRAY);
                     DrawTexture(gframe, 0, 0, Fade(WHITE, 0.5f));
                 }
         
@@ -533,6 +616,23 @@ void UpdateDrawFrame(void)
                 if ((framesCounter/30) % 2) DrawTextEx(font, "PRESS ENTER to REPLAY", (Vector2){ screenWidth/2 - 250, 520 }, font.baseSize, -2, LIGHTGRAY);
                 
             } break;
+            case WIN:
+            {
+                // Draw a transparent black rectangle that covers all screen
+                DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.4f));
+                if (gameraMode)
+                    DrawTextEx(font, "HENRIC DID 9/11", (Vector2){ 200, 160 }, font.baseSize*3, -2, MAROON);
+                else
+                    DrawTextEx(font, "EAGLE DID 9/11", (Vector2){ 220, 160 }, font.baseSize*3, -2, MAROON);
+                
+                DrawTextEx(font, TextFormat("SCORE: %04i", score), (Vector2){ 680, 350 }, font.baseSize, -2, GOLD);
+                DrawTextEx(font, TextFormat("DISTANCE: %04i", (int)distance), (Vector2){ 290, 350 }, font.baseSize, -2, GOLD);
+                DrawTextEx(font, TextFormat("HISCORE: %04i", hiscore), (Vector2){ 665, 400 }, font.baseSize, -2, ORANGE);
+                DrawTextEx(font, TextFormat("HIDISTANCE: %04i", (int)hidistance), (Vector2){ 270, 400 }, font.baseSize, -2, ORANGE);
+                
+                // Draw blinking text
+                if ((framesCounter/30) % 2) DrawTextEx(font, "PRESS ENTER to REPLAY", (Vector2){ screenWidth/2 - 250, 520 }, font.baseSize, -2, LIGHTGRAY);
+            }
             default: break;
         }
 
