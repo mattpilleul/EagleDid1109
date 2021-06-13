@@ -28,7 +28,7 @@
 
 #define MAX_ENEMIES 10
 
-typedef enum { TITLE = 0, GAMEPLAY, ENDING, WIN } GameScreen;
+typedef enum { TITLE = 0, GAMEPLAY, ENDING, WIN, CREDITS } GameScreen;
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
@@ -39,7 +39,6 @@ const int screenHeight = 720;
 Texture2D sky;
 Texture2D mountains;
 Texture2D sea;
-Texture2D title;
 Texture2D turtle;
 Texture2D gamera;
 Texture2D shark;
@@ -106,7 +105,7 @@ int main()
     //--------------------------------------------------------------------------------------
     
     // Init window
-    InitWindow(screenWidth, screenHeight, "Eagle Did 9/11");
+    InitWindow(screenWidth, screenHeight, "Who Did 9/11 ?");
     
     // Initialize audio device
     InitAudioDevice();      
@@ -115,24 +114,23 @@ int main()
     sky = LoadTexture("resources/sky.png");
     mountains = LoadTexture("resources/mountains.png");
     sea = LoadTexture("resources/sea.png");
-    title = LoadTexture("resources/new_sprites/title.png");
-    turtle = LoadTexture("resources/new_sprites/eagle.png");
-    gamera = LoadTexture("resources/new_sprites/henric.png");
-    shark = LoadTexture("resources/new_sprites/rafale.png");
-    orca = LoadTexture("resources/new_sprites/drone.png");
-    swhale = LoadTexture("resources/new_sprites/boeing777.png");
-    fish = LoadTexture("resources/new_sprites/worm.png");
+    turtle = LoadTexture("resources/eagle.png");
+    gamera = LoadTexture("resources/henric.png");
+    shark = LoadTexture("resources/rafale.png");
+    orca = LoadTexture("resources/drone.png");
+    swhale = LoadTexture("resources/boeing777.png");
+    fish = LoadTexture("resources/worm.png");
     gframe = LoadTexture("resources/gframe.png");
-    ttower = LoadTexture("resources/new_sprites/tours.png");
+    ttower = LoadTexture("resources/tours.png");
     
     // Load game resources: fonts
     font = LoadFont("resources/komika.png");
     
     // Load game resources: sounds
-    eat = LoadSound("resources/new_sprites/son_bouche_manger.wav");
-    die = LoadSound("resources/new_sprites/AIE.wav");
-    growl = LoadSound("resources/new_sprites/whatttt.wav");
-    explode = LoadSound("resources/new_sprites/bruit_explosion.wav");
+    eat = LoadSound("resources/son_bouche_manger.wav");
+    die = LoadSound("resources/AIE.wav");
+    growl = LoadSound("resources/whatttt.wav");
+    explode = LoadSound("resources/bruit_explosion.wav");
     
     SetSoundVolume(eat, 10);
     SetSoundVolume(explode, 5);
@@ -191,13 +189,13 @@ int main()
     UnloadTexture(mountains);
     UnloadTexture(sea);
     UnloadTexture(gframe);
-    UnloadTexture(title);
     UnloadTexture(turtle);
     UnloadTexture(shark);
     UnloadTexture(orca);
     UnloadTexture(swhale);
     UnloadTexture(fish);
     UnloadTexture(gamera);
+    UnloadTexture(ttower);
     
     // Unload font texture
     UnloadFont(font);
@@ -206,6 +204,7 @@ int main()
     UnloadSound(eat);
     UnloadSound(die);
     UnloadSound(growl);
+    UnloadSound(explode);
     
     UnloadMusicStream(music);   // Unload music
     CloseAudioDevice();         // Close audio device
@@ -236,7 +235,7 @@ void UpdateDrawFrame(void)
         {
             // Sea scrolling
             seaScrolling -= 2;
-            if (seaScrolling <= -screenWidth) seaScrolling = 0; 
+            if (seaScrolling <= -screenWidth) seaScrolling = 0;
         
             // Press enter to change to gameplay screen
             if (IsKeyPressed(KEY_ENTER))
@@ -446,8 +445,8 @@ void UpdateDrawFrame(void)
                     enemyActive[i] = false;
                 }
                 
+                ttowerBounds = (Rectangle){ screenWidth + 14, 120 + 90, 100, screenHeight };
                 ttowerActive = false;
-                ttowerBounds = (Rectangle){ screenWidth + 14, 120 + 90 + 14, 100, 100 };
 
                 enemySpeed = 10;
                 
@@ -456,6 +455,9 @@ void UpdateDrawFrame(void)
                 distance = 0.0;
                 foodBar = 0;
                 framesCounter = 0;
+            }
+            if (IsKeyPressed(KEY_C)) {
+                currentScreen = CREDITS;
             }
   
         } break;
@@ -491,6 +493,9 @@ void UpdateDrawFrame(void)
                     enemyActive[i] = false;
                 }
                 
+                ttowerBounds = (Rectangle){ screenWidth + 14, 120 + 90, 100, screenHeight };
+                ttowerActive = false;
+
                 enemySpeed = 10;
                 
                 // Reset game variables
@@ -499,7 +504,51 @@ void UpdateDrawFrame(void)
                 foodBar = 0;
                 framesCounter = 0;
             }
+            if (IsKeyPressed(KEY_C)) {
+                currentScreen = CREDITS;
+            }
   
+        } break;
+        case CREDITS:
+        {
+            if (IsKeyPressed(KEY_T)) {
+                currentScreen = TITLE;
+
+                playerRail = 1;
+                playerBounds = (Rectangle){ 30 + 14, playerRail*120 + 90 + 14, 100, 100 };
+                gameraMode = false;
+                
+                // Reset enemies data
+                for (int i = 0; i < MAX_ENEMIES; i++)
+                {
+                    int enemyProb = GetRandomValue(0, 100);
+                    
+                    if (enemyProb < 30) enemyType[i] = 0;
+                    else if (enemyProb < 60) enemyType[i] = 1;
+                    else if (enemyProb < 90) enemyType[i] = 2;
+                    else enemyType[i] = 3;
+                    
+                    //enemyType[i] = GetRandomValue(0, 3);
+                    enemyRail[i] = GetRandomValue(0, 4);
+
+                    // Make sure not two consecutive enemies in the same row
+                    if (i > 0) while (enemyRail[i] == enemyRail[i - 1]) enemyRail[i] = GetRandomValue(0, 4);
+                    
+                    enemyBounds[i] = (Rectangle){ screenWidth + 14, 120*enemyRail[i] + 90 + 14, 100, 100 };
+                    enemyActive[i] = false;
+                }
+                
+                ttowerBounds = (Rectangle){ screenWidth + 14, 120 + 90, 100, screenHeight };
+                ttowerActive = false;
+
+                enemySpeed = 10;
+                
+                // Reset game variables
+                score = 0;
+                distance = 0.0;
+                foodBar = 0;
+                framesCounter = 0;
+            }
         } break;
         default: break;
     }
@@ -533,7 +582,7 @@ void UpdateDrawFrame(void)
             case TITLE:
             {
                 // Draw title
-                DrawTexture(title, screenWidth/2 - title.width/2, screenHeight/2 - title.height/2 - 80, WHITE);
+                DrawTextEx(font, "WHO DID 9/11", (Vector2){ screenWidth/2 - 300, 220 }, 100, 1, RED);
                 
                 // Draw blinking text
                 if ((framesCounter/30) % 2) DrawTextEx(font, "PRESS ENTER", (Vector2){ screenWidth/2 - 150, 480 }, font.baseSize, 1, WHITE);
@@ -614,6 +663,7 @@ void UpdateDrawFrame(void)
                 
                 // Draw blinking text
                 if ((framesCounter/30) % 2) DrawTextEx(font, "PRESS ENTER to REPLAY", (Vector2){ screenWidth/2 - 250, 520 }, font.baseSize, -2, LIGHTGRAY);
+                DrawTextEx(font, "PRESS C to show CREDITS", (Vector2){ screenWidth/2 - 250, 580 }, font.baseSize, -2, GRAY);
                 
             } break;
             case WIN:
@@ -632,7 +682,19 @@ void UpdateDrawFrame(void)
                 
                 // Draw blinking text
                 if ((framesCounter/30) % 2) DrawTextEx(font, "PRESS ENTER to REPLAY", (Vector2){ screenWidth/2 - 250, 520 }, font.baseSize, -2, LIGHTGRAY);
-            }
+                DrawTextEx(font, "PRESS C to show CREDITS", (Vector2){ screenWidth/2 - 250, 580 }, font.baseSize, -2, GRAY);
+            } break;
+            case CREDITS:
+            {
+                DrawTextEx(font, "TEAM:", (Vector2){ screenWidth/2 - 50, 120 }, font.baseSize, -2, ORANGE);
+                DrawTextEx(font, "THIBAULT BARBE", (Vector2){ screenWidth/2 - 150, 200 }, font.baseSize, -2, ORANGE);
+                DrawTextEx(font, "BAPTISTE PAUTONNIER", (Vector2){ screenWidth/2 - 150, 250 }, font.baseSize, -2, ORANGE);
+                DrawTextEx(font, "MATTHIEU PILLEUL", (Vector2){ screenWidth/2 - 150, 300 }, font.baseSize, -2, ORANGE);
+                DrawTextEx(font, "CLEMENT BUTET", (Vector2){ screenWidth/2 - 150, 350 }, font.baseSize, -2, ORANGE);
+                DrawTextEx(font, "ANTOINE BOUSSION", (Vector2){ screenWidth/2 - 150, 400 }, font.baseSize, -2, ORANGE);
+                if ((framesCounter/30) % 2) DrawTextEx(font, "PRESS T to go back to TITLE", (Vector2){ screenWidth/2 - 250, 520 }, font.baseSize, -2, LIGHTGRAY);
+
+            } break;
             default: break;
         }
 

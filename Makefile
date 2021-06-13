@@ -374,7 +374,7 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
 endif
 
 # Define all source files required
-SCREENS = drturtle_final_web \
+SCREENS = game \
 
 # typing 'make' will invoke the default target entry
 all: $(SCREENS)
